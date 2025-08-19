@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  server_a:
+    build:
+      context: .
+      dockerfile: server_a/Dockerfile
+    container_name: dynipsync_server_a
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/data   # persist last IP
+    restart: unless-stopped
+
+  server_b:
+    build:
+      context: .
+      dockerfile: server_b/Dockerfile
+    container_name: dynipsync_server_b
+    volumes:
+      - ./data:/data   # persist last IP
+    restart: unless-stopped
