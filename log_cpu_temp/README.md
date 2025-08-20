@@ -69,7 +69,7 @@ You can configure:
 ## Systemd Service Setup
 
 To run the logger automatically in the background, you can set up a systemd service.
-1. Create the service file `/etc/systemd/system/cpu_logger.service`:
+1. Move the service file to `/etc/systemd/system/cpu_logger.service` replaicing `username` by your value.
 ```init
 [Unit]
 Description=CPU Temperature Logger
