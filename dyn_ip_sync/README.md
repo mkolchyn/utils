@@ -23,7 +23,7 @@ This is useful when one server has a **dynamic IP** (e.g., at home, on cloud wit
 
 ## ⚙️ Configuration
 
-Both services use `.env` files for configuration.
+Both services use `.env` files for configuration. Create the file and place it in the root directory: `dyn_ip_sync/.env`.
 
 ### Example: **.env**
 ```env
