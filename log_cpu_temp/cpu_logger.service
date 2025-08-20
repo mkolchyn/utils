@@ -1,0 +1,13 @@
+[Unit]
+Description=CPU Temperature Logger
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/home/username/log_cpu_temp.sh
+Restart=always
+User=username
+WorkingDirectory=/home/username
+
+[Install]
+WantedBy=multi-user.target
