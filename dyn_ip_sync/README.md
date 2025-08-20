@@ -76,4 +76,4 @@ docker-compose up --build -d server_b
 ## 📌 Roadmap
 
 - Add optional HTTPS via Let’s Encrypt.
-- Add /current-ip endpoint on Server A for querying the last IP.
+- Add `/current-ip` endpoint on Server A for querying the last IP of Server B.
