@@ -28,26 +28,44 @@ def write_last_ip(filepath, ip):
 def load_subscribers():
     if os.path.exists(config.SUB_FILE_PATH):
         with open(config.SUB_FILE_PATH) as f:
-            return set(json.load(f))
-    return set()
+            return json.load(f)   # list of dicts
+    return []
 
 def save_subscribers(subscribers):
     with open(config.SUB_FILE_PATH, "w") as f:
-        json.dump(list(subscribers), f)
+        json.dump(subscribers, f, indent=2)
 
-def add_subscriber(chat_id, subscribers):
-    subscribers.add(chat_id)
+def add_subscriber(chat_id, subscribers, first_name="", last_name="", username=""):
+    # check if already exists
+    for sub in subscribers:
+        if sub["chat_id"] == chat_id:
+            # update info if changed
+            sub["first_name"] = first_name
+            sub["last_name"] = last_name
+            sub["username"] = username
+            save_subscribers(subscribers)
+            return subscribers
+    
+    # add new subscriber
+    subscribers.append({
+        "chat_id": chat_id,
+        "first_name": first_name,
+        "last_name": last_name,
+        "username": username
+    })
     save_subscribers(subscribers)
+    return subscribers
 
 def remove_subscriber(chat_id, subscribers):
-    subscribers.discard(chat_id)
+    subscribers = [sub for sub in subscribers if sub["chat_id"] != chat_id]
     save_subscribers(subscribers)
+    return subscribers
 
 def subscription_status(chat_id, subscribers):
-    if chat_id in subscribers:
-        return True
-    else:
-        return False
+    for sub in subscribers:
+        if sub["chat_id"] == chat_id:
+            return True
+    return False
 
 def send_telegram_message(message, chat_id):
     url = f"https://api.telegram.org/bot{config.TELEGRAM_TOKEN}/sendMessage"
@@ -58,7 +76,8 @@ def send_telegram_message(message, chat_id):
         print(f"Failed to send message to {chat_id}: {e}")
 
 def broadcast(message, subscribers):
-    for chat_id in subscribers:
+    for sub in subscribers:
+        chat_id = sub["chat_id"]
         send_telegram_message(message, chat_id)
 
 def handle_updates(subscribers, last_update_id=None):
@@ -73,11 +92,16 @@ def handle_updates(subscribers, last_update_id=None):
 
     for result in r.get("result", []):
         update_id = result["update_id"]
-        chat_id = result["message"]["chat"]["id"]
+        chat = result["message"]["chat"]
+        
+        chat_id = chat["id"]
+        first_name = chat.get("first_name", "")
+        last_name = chat.get("last_name", "")
+        username = chat.get("username", "")
         text = result["message"].get("text", "")
 
         if text == "/start":
-            add_subscriber(chat_id, subscribers)
+            add_subscriber(chat_id, subscribers, first_name, last_name, username)
             send_telegram_message("Subscribed to IP updates ✅", chat_id)
         elif text == "/stop":
             remove_subscriber(chat_id, subscribers)
