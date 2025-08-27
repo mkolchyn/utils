@@ -11,7 +11,7 @@ def telegram_polling():
     last_update_id = None
     while True:
         last_update_id = utils.handle_updates(subscribers, last_update_id)
-        time.sleep(config.TELEGRAM_POLL_INTERVAL)  # poll every 2 seconds for user commands
+        time.sleep(config.TELEGRAM_POLL_INTERVAL)  # poll every <<<TELEGRAM_POLL_INTERVAL>>> seconds for user commands
 
 # IP check thread
 def ip_monitor():

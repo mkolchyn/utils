@@ -43,6 +43,12 @@ def remove_subscriber(chat_id, subscribers):
     subscribers.discard(chat_id)
     save_subscribers(subscribers)
 
+def subscription_status(chat_id, subscribers):
+    if chat_id in subscribers:
+        return True
+    else:
+        return False
+
 def send_telegram_message(message, chat_id):
     url = f"https://api.telegram.org/bot{config.TELEGRAM_TOKEN}/sendMessage"
     payload = {"chat_id": chat_id, "text": message}
@@ -76,6 +82,17 @@ def handle_updates(subscribers, last_update_id=None):
         elif text == "/stop":
             remove_subscriber(chat_id, subscribers)
             send_telegram_message("Unsubscribed from IP updates ❌", chat_id)
+        elif text == "/status":
+            if subscription_status(chat_id, subscribers):
+                send_telegram_message("You are subscribed to IP updates", chat_id)
+            else:
+                send_telegram_message("You are not subscribed to IP updates", chat_id)
+        elif text == "/getipaddr":
+            if subscription_status(chat_id, subscribers):
+                last_ip_addr = read_last_ip(config.SERVER_B_IP_FILE_PATH)
+                send_telegram_message(f"Last IP address: {last_ip_addr}", chat_id)
+            else:
+                send_telegram_message("Subscribe to IP updates firstly", chat_id)
 
         last_update_id = update_id
 
