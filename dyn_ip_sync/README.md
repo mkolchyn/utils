@@ -1,79 +1,101 @@
 # DynIPSync
 
-**DynIPSync** is a lightweight Python application for synchronizing a server's **dynamic public IP address** with a static server.  
+A lightweight Python application that monitors your machine’s public IP address and notifies all Telegram subscribers whenever it changes.
+Users can subscribe/unsubscribe directly via the Telegram bot, and also query the last known IP.
 
-It consists of two parts:
-
-- **Server A (Receiver)** → A Flask API that accepts IP updates and stores the latest IP.  
-- **Server B (Client)** → A Python client that detects its current public IP and sends updates to Server A when the IP changes.  
-
-This is useful when one server has a **dynamic IP** (e.g., at home, on cloud without elastic IP) and needs to be tracked by another server with a **static IP**.
+This is a new version that replaces the old server A/B sync logic with a Telegram alerting system.
 
 ---
 
 ## ✨ Features
-- Detects IP changes automatically.  
-- Sends updates only when the IP changes (avoids noise).  
-- Token-based authentication between servers.  
-- Configurable via `.env` files.  
-- Dockerized (with `docker-compose`).  
-- Persists the last known IP in a mounted volume.  
+- Detects public IP changes using ipify.org
+- Sends alerts via Telegram bot to all subscribers.
+- Subscription model with commands:
+  - `/start` → subscribe
+  - `/stop` → unsubscribe
+  - `/status` → check subscription status
+  - `/getipaddr` → request last known IP
+- Persists:
+  - Last known IP (default: `./app/artifact/server_last_ip.txt`, docker: `./data/server_last_ip.txt`)
+  - Subscribers (default: `./app/artifact/subscribers.json`, docker: `./data/subscribers.json`)
+- Configurable via `.env` file.
+- Runs two threads:
+  - IP Monitor → checks IP every `CHECK_INTERVAL` seconds.
+  - Telegram Poller → checks Telegram API every `TELEGRAM_POLL_INTERVAL` seconds. 
 
 ---
 
 ## ⚙️ Configuration
 
-Both services use `.env` files for configuration. Create the file and place it in the root directory: `dyn_ip_sync/.env`.
-
-### Example: **.env**
-```env
-SERVER_A_URL=http://server_a:5000/update-ip
-API_TOKEN=supersecrettoken
-CHECK_INTERVAL=300
-SERVER_B_IP_FILE_PATH=./server_b/artifact/server_b_last_ip.txt
-SERVER_A_IP_FILE_PATH=./server_a/artifact/server_b_last_ip.txt
-SERVER_A_HOST=0.0.0.0
-SERVER_A_PORT=5000
-```
-
-**Server A**
-| Variable                | Description |
-|-------------------------|-------------|
-| SERVER_A_IP_FILE_PATH   | Path where Server A stores the last received IP from Server B. Should be writable by the app. |
-| API_TOKEN               | Shared secret token to authenticate requests from Server B. Must match Server B’s API_TOKEN. |
-| SERVER_A_HOST           | Host/IP on which the Flask server listens. Use `0.0.0.0` for all interfaces. |
-| SERVER_A_PORT           | Port on which the Flask server runs (e.g., `5000`). |
-
-**Server B**
-| Variable                | Description |
-|-------------------------|-------------|
-| SERVER_A_URL            | Full URL of Server A endpoint to send IP updates (e.g., `http://server_a:5000/update-ip`). |
-| API_TOKEN               | Shared secret token to authenticate requests to Server A. Must match Server A’s API_TOKEN. |
-| CHECK_INTERVAL          | Time interval (in seconds) between consecutive IP checks. Only sends updates if IP changed. |
-| SERVER_B_IP_FILE_PATH   | Path to a local file where Server B stores its last known public IP to avoid redundant updates. |
-
+Environment variables (see `.env.example`):
+| Variable                 | Description                               | Default                             |
+| ------------------------ | ----------------------------------------- | ----------------------------------- |
+| `CHECK_INTERVAL`         | Seconds between IP checks                 | `300`                               |
+| `SERVER_B_IP_FILE_PATH`  | Path to file storing last known IP        | `./app/artifact/server_last_ip.txt` |
+| `TELEGRAM_TOKEN`         | Bot token from BotFather                  | *(required)*                        |
+| `TELEGRAM_POLL_INTERVAL` | Interval (seconds) between Telegram polls | `5`                                 |
+| `SUB_FILE_PATH`          | File path to save subscribers list        | `./app/artifact/subscribers.json`   |
 
 ---
 
+## 🚀 Installation & Usage
+You can run dyn_ip_sync in two ways:
 
-## 🐳 Run with Docker
-
-**Build and start Server A:**
-```init
-docker-compose up --build -d server_a
-
+🔹 **Option 1: Run without Docker (local installation)**
+1. Clone the repo
+```bash
+git clone https://github.com/mkolchyn/utils.git
+cd utils/dyn_ip_sync
 ```
-**Build and start Server B:**
-```init
-docker-compose up --build -d server_b
-
+2. Configure environment
+```bash
+cp .env.example .env
+# edit .env with your TELEGRAM_TOKEN and options
+```
+3. Install dependencies
+```bash
+cd app
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+4. Run
+```bash
+python app/main.py
 ```
 
-
+🔹 **Option 2: Run with Docker**
+1. Clone the repo
+```bash
+git clone https://github.com/mkolchyn/utils.git
+cd utils/dyn_ip_sync
+```
+2. Configure environment
+```bash
+cp .env.example .env
+# edit .env with your TELEGRAM_TOKEN and options
+```
+3. Build & Run
+```bash
+docker-compose up -d
+```
+4. Check logs
+```bash
+docker logs -f dynipsync_telegram
+```
+Example log output:
+```scss
+[*] DynIPSync client started.
+[-] IP unchanged (203.0.113.5), not sending.
+[+] IP changed: 203.0.113.5 → 203.0.113.77
+```
 ---
 
+## 📲 Telegram Bot Commands
 
-## 📌 Roadmap
-
-- Add optional HTTPS via Let’s Encrypt.
-- Add `/current-ip` endpoint on Server A for querying the last IP of Server B.
+| Command      | Action                               |
+| ------------ | ------------------------------------ |
+| `/start`     | Subscribe to IP change notifications |
+| `/stop`      | Unsubscribe from notifications       |
+| `/status`    | Check if you’re currently subscribed |
+| `/getipaddr` | Get the last recorded IP address     |
