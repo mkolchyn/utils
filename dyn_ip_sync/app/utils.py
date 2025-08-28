@@ -32,8 +32,8 @@ def load_subscribers():
     return []
 
 def save_subscribers(subscribers):
-    with open(config.SUB_FILE_PATH, "w") as f:
-        json.dump(subscribers, f, indent=2)
+    with open(config.SUB_FILE_PATH, "w", encoding="utf-8") as f:
+        json.dump(subscribers, f, indent=2, ensure_ascii=False)
 
 def add_subscriber(chat_id, subscribers, first_name="", last_name="", username=""):
     # check if already exists
