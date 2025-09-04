@@ -3,11 +3,12 @@ import threading
 import utils
 import config
 
+subscribers = utils.load_subscribers()
+
 # Telegram polling thread
 def telegram_polling():
     last_update_id = None
     while True:
-        subscribers = utils.load_subscribers()
         last_update_id = utils.handle_updates(subscribers, last_update_id)
         time.sleep(config.TELEGRAM_POLL_INTERVAL)  # poll every <<<TELEGRAM_POLL_INTERVAL>>> seconds for user commands
 
