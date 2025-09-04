@@ -6,14 +6,14 @@ import config
 subscribers = utils.load_subscribers()
 
 # Telegram polling thread
-def telegram_polling():
+def telegram_polling(subscribers):
     last_update_id = None
     while True:
         last_update_id = utils.handle_updates(subscribers, last_update_id)
         time.sleep(config.TELEGRAM_POLL_INTERVAL)  # poll every <<<TELEGRAM_POLL_INTERVAL>>> seconds for user commands
 
 # IP check thread
-def ip_monitor():
+def ip_monitor(subscribers):
     while True:
         current_ip = utils.get_public_ip()
         if current_ip:
@@ -31,11 +31,11 @@ def main():
     print("[*] DynIPSync client started.")
     
     # Start Telegram polling in a separate thread
-    t1 = threading.Thread(target=telegram_polling, daemon=True)
+    t1 = threading.Thread(target=telegram_polling, args=(subscribers,), daemon=True)
     t1.start()
     
     # Start IP monitor in the main thread
-    ip_monitor()
+    ip_monitor(subscribers)
 
 if __name__ == "__main__":
     main()
