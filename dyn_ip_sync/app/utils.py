@@ -92,31 +92,39 @@ def handle_updates(subscribers, last_update_id=None):
 
     for result in r.get("result", []):
         update_id = result["update_id"]
-        chat = result["message"]["chat"]
-        
+
+        # Some updates may not have "message"
+        message = result.get("message")
+        if not message:
+            continue  # ignore non-message updates
+
+        chat = message["chat"]
         chat_id = chat["id"]
         first_name = chat.get("first_name", "")
         last_name = chat.get("last_name", "")
         username = chat.get("username", "")
-        text = result["message"].get("text", "")
+        text = message.get("text", "")
 
         if text == "/start":
             if subscription_status(chat_id, subscribers):
-                send_telegram_message(f"You're already subscribed", chat_id)
+                send_telegram_message("You're already subscribed", chat_id)
             else:
                 add_subscriber(chat_id, subscribers, first_name, last_name, username)
                 send_telegram_message("Subscribed to IP updates ✅", chat_id)
+
         elif text == "/stop":
             if not subscription_status(chat_id, subscribers):
-                send_telegram_message(f"You're not subscribed", chat_id)
+                send_telegram_message("You're not subscribed", chat_id)
             else:
                 remove_subscriber(chat_id, subscribers)
                 send_telegram_message("Unsubscribed from IP updates ❌", chat_id)
+
         elif text == "/status":
             if subscription_status(chat_id, subscribers):
                 send_telegram_message("You're subscribed to IP updates", chat_id)
             else:
                 send_telegram_message("You're not subscribed to IP updates", chat_id)
+
         elif text == "/getipaddr":
             if subscription_status(chat_id, subscribers):
                 last_ip_addr = read_last_ip(config.SERVER_B_IP_FILE_PATH)
